@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     );
 
     const projectCount = parseInt(existingProjects[0]?.count || "0", 10);
-    const maxProjects = user.subscription_tier === "pro" ? 10 : 1;
+    const maxProjects = user.subscriptionTier === "pro" ? 10 : 1;
 
     if (projectCount >= maxProjects) {
       throw new SubscriptionError(

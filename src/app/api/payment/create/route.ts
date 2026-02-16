@@ -14,7 +14,7 @@ import { PRICING_PLANS } from "@/lib/config/constants";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2024-06-20",
+  apiVersion: "2023-10-16" as any,
 });
 
 export async function POST(request: NextRequest) {
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       throw new PaymentError("Stripe price ID not configured for this plan");
     }
 
-    let stripeCustomerId = user.stripe_customer_id;
+    let stripeCustomerId = user.stripeCustomerId;
 
     if (!stripeCustomerId) {
       const customer = await stripe.customers.create({
