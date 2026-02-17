@@ -1,22 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Button from "./Button";
 
+interface User {
+  id: string;
+  email: string;
+  name: string;
+}
+
 export default function Header() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   useEffect(() => {
     fetchUser();
-  }, []);
+  }, [fetchUser]);
 
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
     try {
       const response = await fetch("/api/user/profile");
       if (response.ok) {
@@ -26,7 +32,7 @@ export default function Header() {
     } catch (error) {
       console.error("Failed to fetch user:", error);
     }
-  };
+  }, []);
 
   const handleLogout = async () => {
     try {

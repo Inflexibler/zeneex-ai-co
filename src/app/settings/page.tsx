@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Header from "@/components/Header";
@@ -8,10 +8,20 @@ import Footer from "@/components/Footer";
 import Button from "@/components/Button";
 import Loader from "@/components/Loader";
 
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  subscription_tier: string;
+  subscription_status: string;
+  github_username?: string;
+  email_verified: boolean;
+}
+
 export default function SettingsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -22,11 +32,7 @@ export default function SettingsPage() {
   const [deletePassword, setDeletePassword] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  useEffect(() => {
-    fetchUserData();
-  }, []);
-
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     try {
       const response = await fetch("/api/user/profile");
       if (response.ok) {
@@ -45,7 +51,11 @@ export default function SettingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +79,7 @@ export default function SettingsPage() {
       const data = await response.json();
       setUser(data.data);
       setMessage({ type: "success", text: "Profile updated successfully" });
-    } catch (error) {
+    } catch {
       setMessage({ type: "error", text: "Failed to update profile" });
     } finally {
       setSaving(false);
@@ -94,7 +104,7 @@ export default function SettingsPage() {
       }
 
       router.push("/signup");
-    } catch (error) {
+    } catch {
       setMessage({ type: "error", text: "Failed to delete account" });
     }
   };
