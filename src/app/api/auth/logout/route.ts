@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createSuccessResponse, createErrorResponse } from "@/lib/utils/error-handler";
 import { requireAuth } from "@/lib/middleware/auth";
 import { clearAuthCookie } from "@/lib/middleware/auth";
@@ -20,7 +20,7 @@ export async function POST() {
     });
   }
 
-  function handleError(error: unknown) {
+  function handleError() {
     return {
       code: "UNAUTHORIZED",
       message: "Failed to logout",
