@@ -1,306 +1,206 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import Button from "@/components/Button";
-import Loader from "@/components/Loader";
+import { useCallback, useEffect, useState } from 'react';
+import { Button } from '@/components/Button';
+
+interface UserData {
+  name: string;
+  email: string;
+  plan: string;
+  credits: number;
+}
 
 export default function SettingsPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
-  const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    githubUsername: "",
-  });
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deletePassword, setDeletePassword] = useState("");
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [formData, setFormData] = useState({ name: '', email: '' });
+
+  const fetchUserData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/user');
+      const data = await res.json();
+      setUserData(data);
+      setFormData({ name: data.name, email: data.email });
+    } catch (err) {
+      console.error('Failed to fetch user data:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchUserData();
-  }, []);
+  }, [fetchUserData]);
 
-  const fetchUserData = async () => {
+  const handleUpdateProfile = async () => {
     try {
-      const response = await fetch("/api/user/profile");
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.data);
-        setFormData({
-          name: data.data.name || "",
-          email: data.data.email || "",
-          githubUsername: data.data.github_username || "",
-        });
-      } else if (response.status === 401) {
-        router.push("/login");
+      setLoading(true);
+      const res = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (res.ok) {
+        setSuccessMessage('Profile updated successfully');
+        setTimeout(() => setSuccessMessage(null), 3000);
+        await fetchUserData();
+      } else {
+        console.error('Failed to update profile');
       }
-    } catch (error) {
-      console.error("Failed to fetch user data:", error);
+    } catch (err) {
+      console.error('Update failed:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setMessage(null);
-
+  const handleChangePassword = async () => {
     try {
-      const response = await fetch("/api/user/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          githubUsername: formData.githubUsername,
-        }),
+      setLoading(true);
+      const res = await fetch('/api/user/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword: '', newPassword: '' }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to update profile");
+      if (res.ok) {
+        setSuccessMessage('Password changed successfully');
+        setTimeout(() => setSuccessMessage(null), 3000);
+      } else {
+        console.error('Failed to change password');
       }
-
-      const data = await response.json();
-      setUser(data.data);
-      setMessage({ type: "success", text: "Profile updated successfully" });
-    } catch (error) {
-      setMessage({ type: "error", text: "Failed to update profile" });
+    } catch (err) {
+      console.error('Password change failed:', err);
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   };
 
   const handleDeleteAccount = async () => {
-    if (!deletePassword) {
-      setMessage({ type: "error", text: "Please enter your password" });
-      return;
-    }
+    if (!confirm('Are you sure? This cannot be undone.')) return;
 
     try {
-      const response = await fetch("/api/user/profile", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: deletePassword }),
+      setLoading(true);
+      const res = await fetch('/api/user/delete', {
+        method: 'DELETE',
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to delete account");
+      if (res.ok) {
+        window.location.href = '/';
+      } else {
+        console.error('Failed to delete account');
       }
-
-      router.push("/signup");
-    } catch (error) {
-      setMessage({ type: "error", text: "Failed to delete account" });
+    } catch (err) {
+      console.error('Delete failed:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-neutral-50 flex flex-col">
-        <Header />
-        <main className="flex-1 flex items-center justify-center">
-          <Loader size="lg" />
-        </main>
-      </div>
-    );
+  if (loading && !userData) {
+    return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex flex-col">
-      <Header />
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
+      <div className="max-w-2xl mx-auto p-8">
+        <h1 className="text-4xl font-bold text-white mb-8">Settings</h1>
 
-      <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-3xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
-          >
-            <h1 className="text-3xl font-bold text-neutral-900">Settings</h1>
-            <p className="mt-2 text-neutral-600">Manage your account settings and preferences</p>
-          </motion.div>
+        {successMessage && (
+          <div className="mb-6 p-4 bg-green-500/20 border border-green-500 text-green-300 rounded-lg">
+            {successMessage}
+          </div>
+        )}
 
-          {message && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`mb-6 p-4 rounded-lg ${
-                message.type === "success"
-                  ? "bg-success/10 border border-success/20"
-                  : "bg-error/10 border border-error/20"
-              }`}
-            >
-              <p className={`text-sm ${message.type === "success" ? "text-success" : "text-error"}`}>
-                {message.text}
-              </p>
-            </motion.div>
-          )}
+        {/* Profile Section */}
+        <div className="bg-slate-800 rounded-lg p-6 mb-6">
+          <h2 className="text-2xl font-semibold text-white mb-4">Profile</h2>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white rounded-xl shadow-sm border border-neutral-200 p-6 mb-6"
-          >
-            <h2 className="text-lg font-semibold text-neutral-900 mb-6">Profile Information</h2>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-neutral-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  value={formData.email}
-                  disabled
-                  className="w-full rounded-lg border border-neutral-300 px-4 py-2 bg-neutral-50 text-neutral-500 cursor-not-allowed"
-                />
-                <p className="mt-1 text-xs text-neutral-500">Email cannot be changed</p>
-              </div>
-
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-neutral-700 mb-1">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full rounded-lg border border-neutral-300 px-4 py-2 focus:border-primary focus:ring-primary focus:outline-none"
-                  placeholder="John Doe"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="githubUsername" className="block text-sm font-medium text-neutral-700 mb-1">
-                  GitHub Username
-                </label>
-                <input
-                  type="text"
-                  id="githubUsername"
-                  value={formData.githubUsername}
-                  onChange={(e) => setFormData({ ...formData, githubUsername: e.target.value })}
-                  className="w-full rounded-lg border border-neutral-300 px-4 py-2 focus:border-primary focus:ring-primary focus:outline-none"
-                  placeholder="johndoe"
-                />
-                <p className="mt-1 text-xs text-neutral-500">
-                  Used for automatic GitHub repository creation
-                </p>
-              </div>
-
-              <Button type="submit" variant="primary" disabled={saving}>
-                {saving ? <Loader size="sm" /> : "Save Changes"}
-              </Button>
-            </form>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white rounded-xl shadow-sm border border-neutral-200 p-6 mb-6"
-          >
-            <h2 className="text-lg font-semibold text-neutral-900 mb-4">Subscription</h2>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-lg font-medium text-neutral-900 capitalize">
-                  {user?.subscription_tier || "Free"} Plan
-                </div>
-                <div className="text-sm text-neutral-600">
-                  Status:{" "}
-                  <span
-                    className={
-                      user?.subscription_status === "active"
-                        ? "text-success"
-                        : "text-neutral-600"
-                    }
-                  >
-                    {user?.subscription_status || "Inactive"}
-                  </span>
-                </div>
-              </div>
-              <Button href="/billing" variant="outline">
-                Manage Subscription
-              </Button>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white rounded-xl shadow-sm border border-error/20 p-6"
-          >
-            <h2 className="text-lg font-semibold text-error mb-4">Danger Zone</h2>
-            <p className="text-sm text-neutral-600 mb-4">
-              Once you delete your account, there is no going back. Please be certain.
-            </p>
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteModal(true)}
-              className="border-error text-error hover:bg-error/10"
-            >
-              Delete Account
-            </Button>
-          </motion.div>
-        </div>
-      </main>
-
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6"
-          >
-            <h3 className="text-xl font-bold text-neutral-900 mb-4">Delete Account</h3>
-            <p className="text-neutral-600 mb-6">
-              This action cannot be undone. All your projects and data will be permanently
-              deleted.
-            </p>
-            <div className="mb-4">
-              <label htmlFor="deletePassword" className="block text-sm font-medium text-neutral-700 mb-1">
-                Confirm Password
-              </label>
+          <div className="space-y-4 mb-6">
+            <div>
+              <label className="block text-slate-300 mb-2">Name</label>
               <input
-                type="password"
-                id="deletePassword"
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-                className="w-full rounded-lg border border-neutral-300 px-4 py-2 focus:border-primary focus:ring-primary focus:outline-none"
-                placeholder="••••••••"
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full px-4 py-2 bg-slate-700 text-white rounded border border-slate-600 focus:border-blue-500 focus:outline-none"
               />
             </div>
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setDeletePassword("");
-                }}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleDeleteAccount}
-                className="flex-1 border-error text-error hover:bg-error/10"
-              >
-                Delete Account
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      )}
 
-      <Footer />
+            <div>
+              <label className="block text-slate-300 mb-2">Email</label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="w-full px-4 py-2 bg-slate-700 text-white rounded border border-slate-600 focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <Button
+            onClick={handleUpdateProfile}
+            disabled={loading}
+            variant="primary"
+          >
+            Update Profile
+          </Button>
+        </div>
+
+        {/* Account Section */}
+        <div className="bg-slate-800 rounded-lg p-6 mb-6">
+          <h2 className="text-2xl font-semibold text-white mb-4">Account</h2>
+
+          <div className="space-y-4">
+            <div className="flex justify-between items-center p-4 bg-slate-700 rounded">
+              <div>
+                <p className="text-white font-semibold">Plan</p>
+                <p className="text-slate-300">{userData?.plan || 'Free'}</p>
+              </div>
+              <Button variant="secondary">Upgrade</Button>
+            </div>
+
+            <div className="flex justify-between items-center p-4 bg-slate-700 rounded">
+              <div>
+                <p className="text-white font-semibold">Credits</p>
+                <p className="text-slate-300">{userData?.credits || 0} remaining</p>
+              </div>
+              <Button variant="secondary">Buy Credits</Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Security Section */}
+        <div className="bg-slate-800 rounded-lg p-6 mb-6">
+          <h2 className="text-2xl font-semibold text-white mb-4">Security</h2>
+
+          <Button
+            onClick={handleChangePassword}
+            disabled={loading}
+            variant="secondary"
+            className="w-full"
+          >
+            Change Password
+          </Button>
+        </div>
+
+        {/* Danger Zone */}
+        <div className="bg-red-900/20 border border-red-500 rounded-lg p-6">
+          <h2 className="text-2xl font-semibold text-red-400 mb-4">Danger Zone</h2>
+
+          <Button
+            onClick={handleDeleteAccount}
+            disabled={loading}
+            variant="destructive"
+            className="w-full"
+          >
+            Delete Account
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
