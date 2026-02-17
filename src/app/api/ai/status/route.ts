@@ -30,8 +30,7 @@ interface StatusRow {
 }
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { projectId: string } }
+  request: NextRequest
 ) {
   try {
     const user = await requireAuth();
