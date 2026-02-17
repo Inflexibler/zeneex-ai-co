@@ -5,13 +5,13 @@ import {
   ValidationError,
   SubscriptionError,
 } from "@/lib/utils/error-handler";
-import { requireAuth, hasSubscription } from "@/lib/middleware/auth";
+import { requireAuth } from "@/lib/middleware/auth";
 import { query, queryOne } from "@/lib/config/database";
 import { logger } from "@/lib/utils/logger";
 import { createProjectSchema } from "@/lib/utils/validation";
 import { nanoid } from "nanoid";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const user = await requireAuth();
 
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     );
 
     return NextResponse.json(createSuccessResponse(projects));
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       createErrorResponse("UNAUTHORIZED", "Failed to fetch projects"),
       { status: 401 }
@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(createSuccessResponse(project), { status: 201 });
   } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handled = handleError(error);
     return NextResponse.json(createErrorResponse(handled.code, handled.message), {
       status: handled.statusCode,

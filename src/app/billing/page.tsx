@@ -1,25 +1,34 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Button from "@/components/Button";
 import Loader from "@/components/Loader";
 
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  subscription_tier: string;
+  subscription_status: string;
+}
+
+interface Payment {
+  id: string;
+  amount: number;
+  status: string;
+  created_at: string;
+}
+
 export default function BillingPage() {
-  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
-  const [subscription, setSubscription] = useState<any>(null);
-  const [payments, setPayments] = useState<any[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [subscription, setSubscription] = useState<{ status: string; tier: string } | null>(null);
+  const [payments] = useState<Payment[]>([]);
 
-  useEffect(() => {
-    fetchBillingData();
-  }, []);
-
-  const fetchBillingData = async () => {
+  const fetchBillingData = useCallback(async () => {
     try {
       const response = await fetch("/api/user/profile");
       if (response.ok) {
@@ -32,7 +41,11 @@ export default function BillingPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchBillingData();
+  }, [fetchBillingData]);
 
   const handleUpgrade = async (planId: string) => {
     try {

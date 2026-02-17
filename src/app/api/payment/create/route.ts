@@ -8,13 +8,13 @@ import {
   PaymentError,
 } from "@/lib/utils/error-handler";
 import { requireAuth } from "@/lib/middleware/auth";
-import { query, queryOne } from "@/lib/config/database";
+import { query } from "@/lib/config/database";
 import { logger } from "@/lib/utils/logger";
 import { PRICING_PLANS } from "@/lib/config/constants";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2023-10-16" as any,
+  apiVersion: "2024-06-20",
 });
 
 export async function POST(request: NextRequest) {

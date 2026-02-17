@@ -7,15 +7,15 @@ import {
   NotFoundError,
   SubscriptionError,
 } from "@/lib/utils/error-handler";
-import { requireAuth, hasSubscription } from "@/lib/middleware/auth";
-import { query, queryOne, transaction } from "@/lib/config/database";
+import { requireAuth } from "@/lib/middleware/auth";
+import { query, queryOne } from "@/lib/config/database";
 import { architectAI } from "@/lib/ai/architect-ai";
 import { engineerAI } from "@/lib/ai/engineer-ai";
 import { Octokit } from "octokit";
 import { logger } from "@/lib/utils/logger";
 import { nanoid } from "nanoid";
 import { checkRateLimit, getUserIdentifer } from "@/lib/middleware/rate-limit";
-import { GITHUB_REPO_ORG, GITHUB_DEFAULT_BRANCH, PRICING_PLANS } from "@/lib/config/constants";
+import { GITHUB_REPO_ORG, GITHUB_DEFAULT_BRANCH } from "@/lib/config/constants";
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { projectId, description, features, techStack } = validation.data;
+    const { projectId, description } = validation.data;
 
     const project = await queryOne(
       "SELECT * FROM projects WHERE id = $1 AND user_id = $2",

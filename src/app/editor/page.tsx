@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { Project, AIGenerationStatus } from "@/lib/types";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import Button from "@/components/Button";
 import Loader from "@/components/Loader";
 
@@ -13,19 +13,13 @@ export default function EditorPage() {
   const router = useRouter();
   const projectId = params.projectId as string;
   const [loading, setLoading] = useState(true);
-  const [project, setProject] = useState<any>(null);
+  const [project, setProject] = useState<Project | null>(null);
   const [generating, setGenerating] = useState(false);
-  const [generationStatus, setGenerationStatus] = useState<any>(null);
-  const [code, setCode] = useState("");
+  const [generationStatus, setGenerationStatus] = useState<AIGenerationStatus | null>(null);
+  const [code] = useState("");
   const [showAiPanel, setShowAiPanel] = useState(true);
 
-  useEffect(() => {
-    if (projectId) {
-      fetchProjectData();
-    }
-  }, [projectId]);
-
-  const fetchProjectData = async () => {
+  const fetchProjectData = useCallback(async () => {
     try {
       const response = await fetch(`/api/projects/${projectId}`);
       if (response.ok) {
@@ -44,9 +38,15 @@ export default function EditorPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId, router]);
 
-  const startPolling = () => {
+  useEffect(() => {
+    if (projectId) {
+      fetchProjectData();
+    }
+  }, [projectId, fetchProjectData]);
+
+  const startPolling = useCallback(() => {
     const pollInterval = setInterval(async () => {
       try {
         const response = await fetch(`/api/ai/status?projectId=${projectId}`);
@@ -68,9 +68,7 @@ export default function EditorPage() {
         console.error("Polling error:", error);
       }
     }, 2000);
-
-    return () => clearInterval(pollInterval);
-  };
+  }, [projectId, fetchProjectData]);
 
   const handleGenerate = async () => {
     setGenerating(true);

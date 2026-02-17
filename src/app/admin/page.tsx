@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Header from "@/components/Header";
@@ -8,26 +8,39 @@ import Footer from "@/components/Footer";
 import Button from "@/components/Button";
 import Loader from "@/components/Loader";
 
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  subscription_tier: string;
+  subscription_status: string;
+  created_at: string;
+}
+
+interface Stats {
+  totalUsers: number;
+  activeSubscriptions: number;
+  totalRevenue: number;
+  totalProjects: number;
+}
+
 export default function AdminPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [stats, setStats] = useState({
+  const [stats] = useState({
     totalUsers: 0,
     activeSubscriptions: 0,
     totalRevenue: 0,
     totalProjects: 0,
   });
 
-  useEffect(() => {
-    fetchAdminData();
-  }, [pagination.page, roleFilter, statusFilter]);
-
-  const fetchAdminData = async () => {
+  const fetchAdminData = useCallback(async () => {
     try {
       const params = new URLSearchParams({
         page: pagination.page.toString(),
@@ -49,7 +62,11 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.page, pagination.limit, roleFilter, statusFilter, router]);
+
+  useEffect(() => {
+    fetchAdminData();
+  }, [fetchAdminData]);
 
   const handleSearch = () => {
     setSearch(search);

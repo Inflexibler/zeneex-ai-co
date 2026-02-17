@@ -10,7 +10,7 @@ import { requireAuth } from "@/lib/middleware/auth";
 import { queryOne, query } from "@/lib/config/database";
 import { logger } from "@/lib/utils/logger";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const user = await requireAuth();
 
@@ -113,7 +113,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE() {
   try {
     const user = await requireAuth();
 
